@@ -1,0 +1,29 @@
+# macOS
+.DS_Store
+
+# Env files
+.env
+*.env.local
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Java
+backend-java/target/
+
+# C/C++ build
+**/build/
+**/cmake-build-*/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+
+# IDE
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
