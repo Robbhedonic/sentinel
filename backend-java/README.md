@@ -31,6 +31,7 @@ mvn spring-boot:run
 
 ## API Endpoints
 
-- `GET /api/v1/transactions?page=0&size=50&accountId=ACC-1234&riskLevel=LOW&minRiskScore=20`
-- `GET /api/v1/fraud-alerts?page=0&size=50&accountId=ACC-1234&status=OPEN&riskLevel=HIGH`
+- `GET /api/v1/transactions?page=0&size=50&accountId=ACC-1234&riskLevel=LOW&minRiskScore=20&maxRiskScore=80&minAmount=100&maxAmount=10000&sortBy=processedAt&sortDir=desc`
+- `GET /api/v1/fraud-alerts?page=0&size=50&accountId=ACC-1234&status=OPEN&riskLevel=HIGH&minRiskScore=40&maxRiskScore=100&sortBy=createdAt&sortDir=desc`
+- `GET /api/v1/analytics/overview`
 - `GET /api/v1/health/pipeline`
