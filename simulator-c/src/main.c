@@ -130,7 +130,7 @@ static int serialize_transaction(const Transaction *tx, bool suspicious, char *b
     return snprintf(
         buffer,
         size,
-        "{\"transaction_id\":\"%s\",\"account_id\":\"%s\",\"recipient_id\":\"%s\",\"amount\":%.2f,\"currency\":\"%s\",\"transaction_type\":\"%s\",\"country\":\"%s\",\"timestamp\":\"%s\",\"simulated_pattern\":\"%s\"}",
+        "{\"event_version\":1,\"event_type\":\"transaction_created\",\"source\":\"simulator-c\",\"transaction_id\":\"%s\",\"account_id\":\"%s\",\"recipient_id\":\"%s\",\"amount\":%.2f,\"currency\":\"%s\",\"transaction_type\":\"%s\",\"country\":\"%s\",\"timestamp\":\"%s\",\"simulated_pattern\":\"%s\"}",
         tx->transaction_id,
         tx->account_id,
         tx->recipient_id,

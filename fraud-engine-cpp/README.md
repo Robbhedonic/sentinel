@@ -8,6 +8,11 @@ C++ real-time fraud detection engine for Sentinel.
 - Applies rule-based scoring (0-100)
 - Publishes enriched events to `transactions.scored`
 - Publishes high-risk alerts to `alerts.generated`
+- Validates required transaction fields before scoring
+
+Event schema reference:
+
+- `docs/api/event-contracts.md`
 
 ## Implemented Rules
 
@@ -68,4 +73,12 @@ docker exec sentinel-kafka-1 /opt/kafka/bin/kafka-console-consumer.sh \
 	--topic alerts.generated \
 	--from-beginning \
 	--max-messages 5
+```
+
+## End-to-End Script
+
+Run a full local E2E test (simulator -> engine -> scored/alerts topics):
+
+```zsh
+./scripts/pipeline-e2e.sh
 ```

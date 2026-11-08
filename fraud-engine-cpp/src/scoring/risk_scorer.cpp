@@ -33,6 +33,7 @@ RiskEvaluation RiskScorer::evaluate(const TransactionEvent &event) const {
     }
 
     return RiskEvaluation {
+        .event_version = 1,
         .transaction = event,
         .risk_score = score,
         .risk_level = level,

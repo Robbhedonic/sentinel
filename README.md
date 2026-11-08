@@ -222,6 +222,7 @@ Bootstrap scripts available:
 - `scripts/dev-up.sh`: starts Kafka, PostgreSQL, Redis, Prometheus, and Grafana
 - `scripts/dev-test.sh`: smoke tests ports and health endpoints
 - `scripts/dev-down.sh`: stops the base platform
+- `scripts/pipeline-e2e.sh`: runs simulator -> fraud engine -> Kafka output validation
 
 Run:
 

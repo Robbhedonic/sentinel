@@ -6,6 +6,9 @@
 namespace sentinel {
 
 struct TransactionEvent {
+    int event_version;
+    std::string event_type;
+    std::string source;
     std::string transaction_id;
     std::string account_id;
     std::string recipient_id;
@@ -24,6 +27,7 @@ struct RuleFinding {
 };
 
 struct RiskEvaluation {
+    int event_version;
     TransactionEvent transaction;
     int risk_score;
     std::string risk_level;
