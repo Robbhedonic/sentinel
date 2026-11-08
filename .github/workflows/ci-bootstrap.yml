@@ -10,8 +10,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Prepare compose env file
+        run: cp infrastructure/docker/.env.example infrastructure/docker/.env
       - name: Validate Docker Compose
-        run: docker compose -f infrastructure/docker/docker-compose.yml config
+        run: docker compose --project-directory infrastructure/docker -f infrastructure/docker/docker-compose.yml config
 
   build-c:
     runs-on: ubuntu-latest
