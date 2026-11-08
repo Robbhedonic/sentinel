@@ -1,5 +1,6 @@
 #include "fraud_engine/detection/transaction_codec.hpp"
 #include "fraud_engine/messaging/kafka_pipeline.hpp"
+#include "fraud_engine/rules/geographic_anomaly_rule.hpp"
 #include "fraud_engine/rules/high_amount_rule.hpp"
 #include "fraud_engine/rules/velocity_rule.hpp"
 #include "fraud_engine/scoring/risk_scorer.hpp"
@@ -63,13 +64,18 @@ int main() {
     const int velocity_window_seconds = env_or_default_int("SENTINEL_VELOCITY_WINDOW_SECONDS", 60);
     const int velocity_max = env_or_default_int("SENTINEL_VELOCITY_MAX_TX", 5);
     const int velocity_points = env_or_default_int("SENTINEL_VELOCITY_POINTS", 25);
-    const int high_risk_threshold = env_or_default_int("SENTINEL_HIGH_RISK_THRESHOLD", 30);
+    const int geographic_window_seconds = env_or_default_int("SENTINEL_GEO_WINDOW_SECONDS", 120);
+    const int geographic_points = env_or_default_int("SENTINEL_GEO_POINTS", 20);
+    const int high_risk_threshold = env_or_default_int("SENTINEL_HIGH_RISK_THRESHOLD", 70);
 
     std::vector<std::unique_ptr<sentinel::RiskRule>> rules;
     rules.push_back(std::make_unique<sentinel::HighAmountRule>(high_amount_threshold, high_amount_points));
     rules.push_back(std::make_unique<sentinel::VelocityRule>(velocity_max,
                                                               std::chrono::seconds(velocity_window_seconds),
                                                               velocity_points));
+    rules.push_back(std::make_unique<sentinel::GeographicAnomalyRule>(
+        std::chrono::seconds(geographic_window_seconds),
+        geographic_points));
 
     sentinel::RiskScorer scorer(std::move(rules));
     sentinel::KafkaPipeline pipeline(kafka_config);

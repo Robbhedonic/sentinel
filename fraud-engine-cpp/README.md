@@ -13,6 +13,7 @@ C++ real-time fraud detection engine for Sentinel.
 
 - `high_amount`: adds points when amount exceeds threshold
 - `velocity_check`: adds points when an account exceeds tx count in a time window
+- `geographic_anomaly`: adds points when account country changes within a short window
 
 ## Runtime Configuration
 
@@ -26,7 +27,9 @@ C++ real-time fraud detection engine for Sentinel.
 - `SENTINEL_VELOCITY_WINDOW_SECONDS` (default: `60`)
 - `SENTINEL_VELOCITY_MAX_TX` (default: `5`)
 - `SENTINEL_VELOCITY_POINTS` (default: `25`)
-- `SENTINEL_HIGH_RISK_THRESHOLD` (default: `30`)
+- `SENTINEL_GEO_WINDOW_SECONDS` (default: `120`)
+- `SENTINEL_GEO_POINTS` (default: `20`)
+- `SENTINEL_HIGH_RISK_THRESHOLD` (default: `70`)
 
 ## Docker Build and Run
 
@@ -40,7 +43,8 @@ Run:
 
 ```zsh
 docker run --rm \
-	-e SENTINEL_KAFKA_BROKERS=host.docker.internal:29092 \
+	--network sentinel_default \
+	-e SENTINEL_KAFKA_BROKERS=kafka:9092 \
 	sentinel/fraud-engine-cpp:dev
 ```
 
