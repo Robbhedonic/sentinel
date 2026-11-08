@@ -1,6 +1,29 @@
 server:
   port: 8080
 
+spring:
+  datasource:
+    url: jdbc:postgresql://${SENTINEL_DB_HOST:localhost}:${SENTINEL_DB_PORT:5432}/${SENTINEL_DB_NAME:sentinel}
+    username: ${SENTINEL_DB_USER:sentinel}
+    password: ${SENTINEL_DB_PASSWORD:sentinel}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  kafka:
+    bootstrap-servers: ${SENTINEL_KAFKA_BOOTSTRAP_SERVERS:localhost:29092}
+    consumer:
+      group-id: ${SENTINEL_KAFKA_CONSUMER_GROUP:sentinel-backend}
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+
+sentinel:
+  kafka:
+    topics:
+      scored: ${SENTINEL_SCORED_TOPIC:transactions.scored}
+      alerts: ${SENTINEL_ALERTS_TOPIC:alerts.generated}
+
 management:
   endpoints:
     web:
