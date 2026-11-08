@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install build tools
-        run: sudo apt-get update && sudo apt-get install -y cmake build-essential
+        run: sudo apt-get update && sudo apt-get install -y cmake build-essential librdkafka-dev
       - name: Build simulator
         run: cmake -S . -B build && cmake --build build
 

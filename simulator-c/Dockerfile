@@ -1,5 +1,5 @@
 FROM alpine:3.20
-RUN apk add --no-cache build-base cmake
+RUN apk add --no-cache build-base cmake librdkafka-dev librdkafka
 WORKDIR /app
 COPY . .
 RUN cmake -S . -B build && cmake --build build
