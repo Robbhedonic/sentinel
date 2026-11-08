@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
+import java.util.Locale;
 
 @RestController
 @RequestMapping("/api/v1/fraud-alerts")
@@ -32,6 +33,10 @@ public class FraudAlertController {
         @RequestParam(required = false) String accountId,
         @RequestParam(required = false) String status,
         @RequestParam(required = false) String riskLevel,
+        @RequestParam(required = false) Integer minRiskScore,
+        @RequestParam(required = false) Integer maxRiskScore,
+        @RequestParam(defaultValue = "createdAt") String sortBy,
+        @RequestParam(defaultValue = "desc") String sortDir,
         @RequestParam(required = false)
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
         Instant fromCreatedAt,
@@ -56,6 +61,14 @@ public class FraudAlertController {
             spec = spec.and((root, query, cb) -> cb.equal(root.get("riskLevel"), riskLevel.toUpperCase()));
         }
 
+        if (minRiskScore != null) {
+            spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("riskScore"), minRiskScore));
+        }
+
+        if (maxRiskScore != null) {
+            spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("riskScore"), maxRiskScore));
+        }
+
         if (fromCreatedAt != null) {
             spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("createdAt"), fromCreatedAt));
         }
@@ -64,8 +77,23 @@ public class FraudAlertController {
             spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("createdAt"), toCreatedAt));
         }
 
-        var pageable = PageRequest.of(normalizedPage, normalizedSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        var pageable = PageRequest.of(normalizedPage,
+                                      normalizedSize,
+                                      Sort.by(direction, resolveSortProperty(sortBy)));
 
         return alertRepository.findAll(spec, pageable).map(FraudAlertDto::from);
+    }
+
+    private String resolveSortProperty(String sortBy) {
+        if (sortBy == null) {
+            return "createdAt";
+        }
+
+        return switch (sortBy.toLowerCase(Locale.ROOT)) {
+            case "riskscore", "risk_score" -> "riskScore";
+            case "createdat", "created_at" -> "createdAt";
+            default -> "createdAt";
+        };
     }
 }

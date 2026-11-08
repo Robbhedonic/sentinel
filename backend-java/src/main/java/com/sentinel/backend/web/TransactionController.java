@@ -13,7 +13,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Locale;
 
 @RestController
 @RequestMapping("/api/v1/transactions")
@@ -32,6 +34,11 @@ public class TransactionController {
         @RequestParam(required = false) String accountId,
         @RequestParam(required = false) String riskLevel,
         @RequestParam(required = false) Integer minRiskScore,
+        @RequestParam(required = false) Integer maxRiskScore,
+        @RequestParam(required = false) BigDecimal minAmount,
+        @RequestParam(required = false) BigDecimal maxAmount,
+        @RequestParam(defaultValue = "processedAt") String sortBy,
+        @RequestParam(defaultValue = "desc") String sortDir,
         @RequestParam(required = false)
         @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
         Instant fromProcessedAt,
@@ -56,6 +63,18 @@ public class TransactionController {
             spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("riskScore"), minRiskScore));
         }
 
+        if (maxRiskScore != null) {
+            spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("riskScore"), maxRiskScore));
+        }
+
+        if (minAmount != null) {
+            spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("amount"), minAmount));
+        }
+
+        if (maxAmount != null) {
+            spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("amount"), maxAmount));
+        }
+
         if (fromProcessedAt != null) {
             spec = spec.and((root, query, cb) -> cb.greaterThanOrEqualTo(root.get("processedAt"), fromProcessedAt));
         }
@@ -64,8 +83,25 @@ public class TransactionController {
             spec = spec.and((root, query, cb) -> cb.lessThanOrEqualTo(root.get("processedAt"), toProcessedAt));
         }
 
-        var pageable = PageRequest.of(normalizedPage, normalizedSize, Sort.by(Sort.Direction.DESC, "processedAt"));
+        Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        var pageable = PageRequest.of(normalizedPage,
+                                      normalizedSize,
+                                      Sort.by(direction, resolveSortProperty(sortBy)));
 
         return transactionRepository.findAll(spec, pageable).map(TransactionDto::from);
+    }
+
+    private String resolveSortProperty(String sortBy) {
+        if (sortBy == null) {
+            return "processedAt";
+        }
+
+        return switch (sortBy.toLowerCase(Locale.ROOT)) {
+            case "riskscore", "risk_score" -> "riskScore";
+            case "amount" -> "amount";
+            case "transactiontimestamp", "transaction_timestamp" -> "transactionTimestamp";
+            case "processedat", "processed_at" -> "processedAt";
+            default -> "processedAt";
+        };
     }
 }
