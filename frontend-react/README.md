@@ -2,6 +2,14 @@
 
 React + TypeScript dashboard for Sentinel.
 
+## Current features
+
+- Analytics overview cards
+- Recent transactions table
+- Recent fraud alerts table
+- Filters by account, risk level, and alert status
+- Manual refresh and auto-refresh every 15 seconds
+
 ## Run locally
 
 ```bash
