@@ -44,6 +44,9 @@ type FraudAlert = {
 type PageResponse<T> = {
   content: T[];
   totalElements: number;
+  totalPages?: number;
+  number?: number;
+  size?: number;
 };
 
 const API_BASE_URL =
@@ -58,6 +61,7 @@ async function getJson<T>(path: string): Promise<T> {
 }
 
 function App() {
+  const pageSize = 8;
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [overview, setOverview] = React.useState<AnalyticsOverview | null>(null);
@@ -65,6 +69,10 @@ function App() {
   const [alerts, setAlerts] = React.useState<FraudAlert[]>([]);
   const [transactionsTotal, setTransactionsTotal] = React.useState(0);
   const [alertsTotal, setAlertsTotal] = React.useState(0);
+  const [transactionsPage, setTransactionsPage] = React.useState(0);
+  const [alertsPage, setAlertsPage] = React.useState(0);
+  const [transactionsTotalPages, setTransactionsTotalPages] = React.useState(1);
+  const [alertsTotalPages, setAlertsTotalPages] = React.useState(1);
   const [autoRefresh, setAutoRefresh] = React.useState(true);
   const [draftFilters, setDraftFilters] = React.useState({
     accountId: "",
@@ -81,8 +89,14 @@ function App() {
       setError(null);
 
       try {
-        const txParams = new URLSearchParams({ page: "0", size: "8" });
-        const alertParams = new URLSearchParams({ page: "0", size: "8" });
+        const txParams = new URLSearchParams({
+          page: String(transactionsPage),
+          size: String(pageSize)
+        });
+        const alertParams = new URLSearchParams({
+          page: String(alertsPage),
+          size: String(pageSize)
+        });
 
         if (filters.accountId.trim()) {
           txParams.set("accountId", filters.accountId.trim());
@@ -98,17 +112,30 @@ function App() {
           alertParams.set("status", filters.status);
         }
 
-        const [overviewData, transactionsPage, alertsPage] = await Promise.all([
+        const [overviewData, transactionsResponse, alertsResponse] = await Promise.all([
           getJson<AnalyticsOverview>("/analytics/overview"),
           getJson<PageResponse<Transaction>>(`/transactions?${txParams.toString()}`),
           getJson<PageResponse<FraudAlert>>(`/fraud-alerts?${alertParams.toString()}`)
         ]);
 
         setOverview(overviewData);
-        setTransactions(transactionsPage.content);
-        setTransactionsTotal(transactionsPage.totalElements);
-        setAlerts(alertsPage.content);
-        setAlertsTotal(alertsPage.totalElements);
+        setTransactions(transactionsResponse.content);
+        setTransactionsTotal(transactionsResponse.totalElements);
+        setTransactionsTotalPages(
+          Math.max(
+            transactionsResponse.totalPages ??
+              Math.ceil(transactionsResponse.totalElements / pageSize),
+            1
+          )
+        );
+        setAlerts(alertsResponse.content);
+        setAlertsTotal(alertsResponse.totalElements);
+        setAlertsTotalPages(
+          Math.max(
+            alertsResponse.totalPages ?? Math.ceil(alertsResponse.totalElements / pageSize),
+            1
+          )
+        );
       } catch (e) {
         const message = e instanceof Error ? e.message : "Unknown error";
         setError(message);
@@ -118,7 +145,7 @@ function App() {
         }
       }
     },
-    [filters]
+    [alertsPage, filters, transactionsPage]
   );
 
   React.useEffect(() => {
@@ -222,7 +249,11 @@ function App() {
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap", alignItems: "center" }}>
           <button
             type="button"
-            onClick={() => setFilters(draftFilters)}
+            onClick={() => {
+              setTransactionsPage(0);
+              setAlertsPage(0);
+              setFilters(draftFilters);
+            }}
             style={{ padding: "0.5rem 0.9rem", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff" }}
           >
             Apply Filters
@@ -232,6 +263,8 @@ function App() {
             onClick={() => {
               const reset = { accountId: "", riskLevel: "", status: "" };
               setDraftFilters(reset);
+              setTransactionsPage(0);
+              setAlertsPage(0);
               setFilters(reset);
             }}
             style={{ padding: "0.5rem 0.9rem", borderRadius: 8, border: "1px solid #cbd5e1", background: "#fff" }}
@@ -318,6 +351,33 @@ function App() {
       <section style={{ display: "grid", gap: "1.5rem" }}>
         <article style={cardStyle}>
           <h2 style={{ marginTop: 0 }}>Recent Transactions ({transactionsTotal})</h2>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.75rem", gap: "0.5rem", flexWrap: "wrap" }}>
+            <span>
+              Page {transactionsPage + 1} of {transactionsTotalPages}
+            </span>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button
+                type="button"
+                disabled={transactionsPage === 0}
+                onClick={() => setTransactionsPage((current) => Math.max(0, current - 1))}
+                style={{ padding: "0.35rem 0.7rem", borderRadius: 8, border: "1px solid #cbd5e1", background: "#fff" }}
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                disabled={transactionsPage + 1 >= transactionsTotalPages}
+                onClick={() =>
+                  setTransactionsPage((current) =>
+                    Math.min(transactionsTotalPages - 1, current + 1)
+                  )
+                }
+                style={{ padding: "0.35rem 0.7rem", borderRadius: 8, border: "1px solid #cbd5e1", background: "#fff" }}
+              >
+                Next
+              </button>
+            </div>
+          </div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
@@ -349,6 +409,31 @@ function App() {
 
         <article style={cardStyle}>
           <h2 style={{ marginTop: 0 }}>Recent Fraud Alerts ({alertsTotal})</h2>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.75rem", gap: "0.5rem", flexWrap: "wrap" }}>
+            <span>
+              Page {alertsPage + 1} of {alertsTotalPages}
+            </span>
+            <div style={{ display: "flex", gap: "0.5rem" }}>
+              <button
+                type="button"
+                disabled={alertsPage === 0}
+                onClick={() => setAlertsPage((current) => Math.max(0, current - 1))}
+                style={{ padding: "0.35rem 0.7rem", borderRadius: 8, border: "1px solid #cbd5e1", background: "#fff" }}
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                disabled={alertsPage + 1 >= alertsTotalPages}
+                onClick={() =>
+                  setAlertsPage((current) => Math.min(alertsTotalPages - 1, current + 1))
+                }
+                style={{ padding: "0.35rem 0.7rem", borderRadius: 8, border: "1px solid #cbd5e1", background: "#fff" }}
+              >
+                Next
+              </button>
+            </div>
+          </div>
           <table style={{ width: "100%", borderCollapse: "collapse" }}>
             <thead>
               <tr>
