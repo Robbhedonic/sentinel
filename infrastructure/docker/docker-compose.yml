@@ -91,6 +91,39 @@ services:
       prometheus:
         condition: service_healthy
 
+  backend:
+    profiles: ["app"]
+    build:
+      context: ../../backend-java
+    restart: unless-stopped
+    environment:
+      - SENTINEL_DB_HOST=postgres
+      - SENTINEL_DB_PORT=5432
+      - SENTINEL_DB_NAME=${POSTGRES_DB}
+      - SENTINEL_DB_USER=${POSTGRES_USER}
+      - SENTINEL_DB_PASSWORD=${POSTGRES_PASSWORD}
+      - SENTINEL_KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+    ports:
+      - "${BACKEND_PORT}:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  frontend:
+    profiles: ["app"]
+    build:
+      context: ../../frontend-react
+    restart: unless-stopped
+    environment:
+      - VITE_API_BASE_URL=http://localhost:${BACKEND_PORT}/api/v1
+    ports:
+      - "${FRONTEND_PORT}:5173"
+    depends_on:
+      backend:
+        condition: service_started
+
 volumes:
   postgres_data:
   redis_data:

@@ -263,6 +263,8 @@ Bootstrap scripts available:
 - `scripts/dev-up.sh`: starts Kafka, PostgreSQL, Redis, Prometheus, and Grafana
 - `scripts/dev-test.sh`: smoke tests ports and health endpoints
 - `scripts/dev-down.sh`: stops the base platform
+- `scripts/dev-up-app.sh`: starts base platform + backend + frontend
+- `scripts/dev-test-app.sh`: smoke tests backend API and frontend
 - `scripts/pipeline-e2e.sh`: runs simulator -> fraud engine -> Kafka output validation
 
 Run:
@@ -270,6 +272,13 @@ Run:
 ```zsh
 ./scripts/dev-up.sh
 ./scripts/dev-test.sh
+```
+
+Run full app stack:
+
+```zsh
+./scripts/dev-up-app.sh
+./scripts/dev-test-app.sh
 ```
 
 Stop:

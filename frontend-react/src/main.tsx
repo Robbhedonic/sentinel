@@ -73,6 +73,10 @@ function App() {
   const [alertsPage, setAlertsPage] = React.useState(0);
   const [transactionsTotalPages, setTransactionsTotalPages] = React.useState(1);
   const [alertsTotalPages, setAlertsTotalPages] = React.useState(1);
+  const [transactionsSortBy, setTransactionsSortBy] = React.useState("processedAt");
+  const [transactionsSortDir, setTransactionsSortDir] = React.useState("desc");
+  const [alertsSortBy, setAlertsSortBy] = React.useState("createdAt");
+  const [alertsSortDir, setAlertsSortDir] = React.useState("desc");
   const [autoRefresh, setAutoRefresh] = React.useState(true);
   const [draftFilters, setDraftFilters] = React.useState({
     accountId: "",
@@ -91,11 +95,15 @@ function App() {
       try {
         const txParams = new URLSearchParams({
           page: String(transactionsPage),
-          size: String(pageSize)
+          size: String(pageSize),
+          sortBy: transactionsSortBy,
+          sortDir: transactionsSortDir
         });
         const alertParams = new URLSearchParams({
           page: String(alertsPage),
-          size: String(pageSize)
+          size: String(pageSize),
+          sortBy: alertsSortBy,
+          sortDir: alertsSortDir
         });
 
         if (filters.accountId.trim()) {
@@ -145,7 +153,15 @@ function App() {
         }
       }
     },
-    [alertsPage, filters, transactionsPage]
+    [
+      alertsPage,
+      alertsSortBy,
+      alertsSortDir,
+      filters,
+      transactionsPage,
+      transactionsSortBy,
+      transactionsSortDir
+    ]
   );
 
   React.useEffect(() => {
@@ -351,11 +367,43 @@ function App() {
       <section style={{ display: "grid", gap: "1.5rem" }}>
         <article style={cardStyle}>
           <h2 style={{ marginTop: 0 }}>Recent Transactions ({transactionsTotal})</h2>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.75rem", gap: "0.5rem", flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: "0.75rem",
+              gap: "0.5rem",
+              flexWrap: "wrap"
+            }}
+          >
             <span>
               Page {transactionsPage + 1} of {transactionsTotalPages}
             </span>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <select
+                value={transactionsSortBy}
+                onChange={(event) => {
+                  setTransactionsPage(0);
+                  setTransactionsSortBy(event.target.value);
+                }}
+                style={{ padding: "0.35rem 0.5rem", borderRadius: 8, border: "1px solid #cbd5e1", background: "#fff" }}
+              >
+                <option value="processedAt">Sort: Processed At</option>
+                <option value="riskScore">Sort: Risk Score</option>
+                <option value="amount">Sort: Amount</option>
+                <option value="transactionTimestamp">Sort: Tx Timestamp</option>
+              </select>
+              <select
+                value={transactionsSortDir}
+                onChange={(event) => {
+                  setTransactionsPage(0);
+                  setTransactionsSortDir(event.target.value);
+                }}
+                style={{ padding: "0.35rem 0.5rem", borderRadius: 8, border: "1px solid #cbd5e1", background: "#fff" }}
+              >
+                <option value="desc">DESC</option>
+                <option value="asc">ASC</option>
+              </select>
               <button
                 type="button"
                 disabled={transactionsPage === 0}
@@ -409,11 +457,41 @@ function App() {
 
         <article style={cardStyle}>
           <h2 style={{ marginTop: 0 }}>Recent Fraud Alerts ({alertsTotal})</h2>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.75rem", gap: "0.5rem", flexWrap: "wrap" }}>
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              marginBottom: "0.75rem",
+              gap: "0.5rem",
+              flexWrap: "wrap"
+            }}
+          >
             <span>
               Page {alertsPage + 1} of {alertsTotalPages}
             </span>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <select
+                value={alertsSortBy}
+                onChange={(event) => {
+                  setAlertsPage(0);
+                  setAlertsSortBy(event.target.value);
+                }}
+                style={{ padding: "0.35rem 0.5rem", borderRadius: 8, border: "1px solid #cbd5e1", background: "#fff" }}
+              >
+                <option value="createdAt">Sort: Created At</option>
+                <option value="riskScore">Sort: Risk Score</option>
+              </select>
+              <select
+                value={alertsSortDir}
+                onChange={(event) => {
+                  setAlertsPage(0);
+                  setAlertsSortDir(event.target.value);
+                }}
+                style={{ padding: "0.35rem 0.5rem", borderRadius: 8, border: "1px solid #cbd5e1", background: "#fff" }}
+              >
+                <option value="desc">DESC</option>
+                <option value="asc">ASC</option>
+              </select>
               <button
                 type="button"
                 disabled={alertsPage === 0}
