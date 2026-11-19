@@ -41,6 +41,21 @@ type FraudAlert = {
   createdAt: string;
 };
 
+type Finding = {
+  rule: string;
+  points: number;
+  reason: string;
+};
+
+function parseFindings(findingsJson: string): Finding[] {
+  try {
+    const parsed = JSON.parse(findingsJson);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 type PageResponse<T> = {
   content: T[];
   totalElements: number;
@@ -67,6 +82,7 @@ function App() {
   const [overview, setOverview] = React.useState<AnalyticsOverview | null>(null);
   const [transactions, setTransactions] = React.useState<Transaction[]>([]);
   const [alerts, setAlerts] = React.useState<FraudAlert[]>([]);
+  const [selectedAlert, setSelectedAlert] = React.useState<FraudAlert | null>(null);
   const [transactionsTotal, setTransactionsTotal] = React.useState(0);
   const [alertsTotal, setAlertsTotal] = React.useState(0);
   const [transactionsPage, setTransactionsPage] = React.useState(0);
@@ -523,7 +539,14 @@ function App() {
             </thead>
             <tbody>
               {alerts.map((alert) => (
-                <tr key={alert.alertId}>
+                <tr
+                  key={alert.alertId}
+                  onClick={() => setSelectedAlert(alert)}
+                  style={{
+                    cursor: "pointer",
+                    background: selectedAlert?.alertId === alert.alertId ? "#eff6ff" : undefined
+                  }}
+                >
                   <td>{alert.alertId}</td>
                   <td>{alert.accountId}</td>
                   <td>{alert.status}</td>
@@ -539,6 +562,44 @@ function App() {
           </table>
         </article>
       </section>
+
+      {selectedAlert && (
+        <section style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid #e2e8f0" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: "1rem", flexWrap: "wrap" }}>
+            <div>
+              <h3 style={{ marginTop: 0 }}>Investigation: {selectedAlert.alertId}</h3>
+              <p>
+                Transaction: <strong>{selectedAlert.transactionId}</strong>
+                {" • "}Account: <strong>{selectedAlert.accountId}</strong>
+                {" • "}Status: <strong>{selectedAlert.status}</strong>
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedAlert(null)}
+              style={{ alignSelf: "start", padding: "0.35rem 0.7rem", borderRadius: 8, border: "1px solid #cbd5e1", background: "#fff" }}
+            >
+              Close
+            </button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.75rem" }}>
+            {parseFindings(selectedAlert.findingsJson).map((finding, index) => (
+              <article
+                key={`${finding.rule}-${index}`}
+                style={{ padding: "0.75rem", borderRadius: 8, border: "1px solid #fecaca", background: "#fff7f7" }}
+              >
+                <strong>{finding.rule}</strong>
+                <div style={{ marginTop: "0.35rem" }}>{finding.points} points</div>
+                <div style={{ marginTop: "0.35rem", color: "#475569" }}>{finding.reason}</div>
+              </article>
+            ))}
+            {parseFindings(selectedAlert.findingsJson).length === 0 && (
+              <p>No structured findings available.</p>
+            )}
+          </div>
+        </section>
+      )}
     </main>
   );
 }

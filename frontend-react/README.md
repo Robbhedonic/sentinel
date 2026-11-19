@@ -11,6 +11,7 @@ React + TypeScript dashboard for Sentinel.
 - Pagination controls for transactions and alerts
 - Sorting controls for risk score, amount, and timestamps
 - Manual refresh and auto-refresh every 15 seconds
+- Clickable fraud alert investigation panel with finding rules and reasons
 
 ## Run locally
 
