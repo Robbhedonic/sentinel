@@ -15,11 +15,12 @@ add_executable(
 	src/rules/high_amount_rule.cpp
 	src/rules/velocity_rule.cpp
 	src/scoring/risk_scorer.cpp
+	src/state/redis_state.cpp
 )
 
 target_include_directories(fraud_engine PRIVATE include)
 target_compile_options(fraud_engine PRIVATE -Wall -Wextra -Wpedantic)
-target_link_libraries(fraud_engine PRIVATE rdkafka nlohmann_json::nlohmann_json)
+target_link_libraries(fraud_engine PRIVATE rdkafka nlohmann_json::nlohmann_json hiredis)
 
 enable_testing()
 
@@ -35,9 +36,11 @@ add_executable(
 	velocity_rule_test
 	tests/velocity_rule_test.cpp
 	src/rules/velocity_rule.cpp
+	src/state/redis_state.cpp
 )
 target_include_directories(velocity_rule_test PRIVATE include)
 target_compile_options(velocity_rule_test PRIVATE -Wall -Wextra -Wpedantic)
+target_link_libraries(velocity_rule_test PRIVATE hiredis)
 
 add_test(NAME HighAmountRuleTest COMMAND high_amount_rule_test)
 add_test(NAME VelocityRuleTest COMMAND velocity_rule_test)

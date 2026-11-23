@@ -4,6 +4,7 @@
 #include "fraud_engine/rules/high_amount_rule.hpp"
 #include "fraud_engine/rules/velocity_rule.hpp"
 #include "fraud_engine/scoring/risk_scorer.hpp"
+#include "fraud_engine/state/redis_state.hpp"
 
 #include <atomic>
 #include <chrono>
@@ -68,11 +69,16 @@ int main() {
     const int geographic_points = env_or_default_int("SENTINEL_GEO_POINTS", 20);
     const int high_risk_threshold = env_or_default_int("SENTINEL_HIGH_RISK_THRESHOLD", 70);
 
+    const std::string redis_host = env_or_default("SENTINEL_REDIS_HOST", "redis");
+    const int redis_port = env_or_default_int("SENTINEL_REDIS_PORT", 6379);
+    sentinel::RedisState redis_state(redis_host, redis_port);
+
     std::vector<std::unique_ptr<sentinel::RiskRule>> rules;
     rules.push_back(std::make_unique<sentinel::HighAmountRule>(high_amount_threshold, high_amount_points));
     rules.push_back(std::make_unique<sentinel::VelocityRule>(velocity_max,
                                                               std::chrono::seconds(velocity_window_seconds),
-                                                              velocity_points));
+                                                              velocity_points,
+                                                              &redis_state));
     rules.push_back(std::make_unique<sentinel::GeographicAnomalyRule>(
         std::chrono::seconds(geographic_window_seconds),
         geographic_points));
@@ -91,6 +97,13 @@ int main() {
               << " scored_topic=" << kafka_config.scored_topic
               << " alerts_topic=" << kafka_config.alerts_topic
               << std::endl;
+
+    if (redis_state.available()) {
+        std::cout << "[fraud-engine] redis connected host=" << redis_host
+                  << " port=" << redis_port << std::endl;
+    } else {
+        std::cout << "[fraud-engine] redis unavailable; using local rule fallback" << std::endl;
+    }
 
     int processed = 0;
     int alerts = 0;

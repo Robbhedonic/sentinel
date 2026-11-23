@@ -35,6 +35,8 @@ Event schema reference:
 - `SENTINEL_GEO_WINDOW_SECONDS` (default: `120`)
 - `SENTINEL_GEO_POINTS` (default: `20`)
 - `SENTINEL_HIGH_RISK_THRESHOLD` (default: `70`)
+- `SENTINEL_REDIS_HOST` (default: `redis` in Docker, `localhost` locally)
+- `SENTINEL_REDIS_PORT` (default: `6379`)
 
 ## Docker Build and Run
 
