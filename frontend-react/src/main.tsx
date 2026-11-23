@@ -75,6 +75,18 @@ async function getJson<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+async function patchJson<T>(path: string, body: unknown): Promise<T> {
+  const response = await fetch(`${API_BASE_URL}${path}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body)
+  });
+  if (!response.ok) {
+    throw new Error(`Request failed (${response.status}): ${path}`);
+  }
+  return response.json() as Promise<T>;
+}
+
 function App() {
   const pageSize = 8;
   const [loading, setLoading] = React.useState(true);
@@ -83,6 +95,7 @@ function App() {
   const [transactions, setTransactions] = React.useState<Transaction[]>([]);
   const [alerts, setAlerts] = React.useState<FraudAlert[]>([]);
   const [selectedAlert, setSelectedAlert] = React.useState<FraudAlert | null>(null);
+  const [updatingAlert, setUpdatingAlert] = React.useState(false);
   const [transactionsTotal, setTransactionsTotal] = React.useState(0);
   const [alertsTotal, setAlertsTotal] = React.useState(0);
   const [transactionsPage, setTransactionsPage] = React.useState(0);
@@ -197,6 +210,31 @@ function App() {
       window.clearInterval(intervalId);
     };
   }, [autoRefresh, loadDashboard]);
+
+  const updateSelectedAlertStatus = async (status: string) => {
+    if (!selectedAlert) {
+      return;
+    }
+
+    setUpdatingAlert(true);
+    setError(null);
+
+    try {
+      const updated = await patchJson<FraudAlert>(
+        `/fraud-alerts/${encodeURIComponent(selectedAlert.alertId)}/status`,
+        { status }
+      );
+      setSelectedAlert(updated);
+      setAlerts((current) =>
+        current.map((alert) => (alert.alertId === updated.alertId ? updated : alert))
+      );
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Unknown error";
+      setError(message);
+    } finally {
+      setUpdatingAlert(false);
+    }
+  };
 
   const cardStyle: React.CSSProperties = {
     background: "#ffffff",
@@ -574,13 +612,39 @@ function App() {
                 {" • "}Status: <strong>{selectedAlert.status}</strong>
               </p>
             </div>
-            <button
-              type="button"
-              onClick={() => setSelectedAlert(null)}
-              style={{ alignSelf: "start", padding: "0.35rem 0.7rem", borderRadius: 8, border: "1px solid #cbd5e1", background: "#fff" }}
-            >
-              Close
-            </button>
+            <div style={{ display: "flex", gap: "0.5rem", alignSelf: "start", flexWrap: "wrap" }}>
+              <button
+                type="button"
+                disabled={updatingAlert}
+                onClick={() => void updateSelectedAlertStatus("UNDER_REVIEW")}
+                style={{ padding: "0.35rem 0.7rem", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff" }}
+              >
+                Start Review
+              </button>
+              <button
+                type="button"
+                disabled={updatingAlert}
+                onClick={() => void updateSelectedAlertStatus("DISMISSED")}
+                style={{ padding: "0.35rem 0.7rem", borderRadius: 8, border: "1px solid #cbd5e1", background: "#fff" }}
+              >
+                Dismiss
+              </button>
+              <button
+                type="button"
+                disabled={updatingAlert}
+                onClick={() => void updateSelectedAlertStatus("CONFIRMED_FRAUD")}
+                style={{ padding: "0.35rem 0.7rem", borderRadius: 8, border: "1px solid #b91c1c", background: "#b91c1c", color: "#fff" }}
+              >
+                Confirm Fraud
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedAlert(null)}
+                style={{ padding: "0.35rem 0.7rem", borderRadius: 8, border: "1px solid #cbd5e1", background: "#fff" }}
+              >
+                Close
+              </button>
+            </div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "0.75rem" }}>

@@ -3,18 +3,18 @@ package com.sentinel.backend.web;
 import com.sentinel.backend.repository.FraudAlertRecordRepository;
 import com.sentinel.backend.model.FraudAlertRecord;
 import com.sentinel.backend.web.dto.FraudAlertDto;
+import com.sentinel.backend.web.dto.UpdateFraudAlertStatusRequest;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.format.annotation.DateTimeFormat;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.Instant;
 import java.util.Locale;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/v1/fraud-alerts")
@@ -28,21 +28,21 @@ public class FraudAlertController {
 
     @GetMapping
     public Page<FraudAlertDto> listAlerts(
-        @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "50") int size,
-        @RequestParam(required = false) String accountId,
-        @RequestParam(required = false) String status,
-        @RequestParam(required = false) String riskLevel,
-        @RequestParam(required = false) Integer minRiskScore,
-        @RequestParam(required = false) Integer maxRiskScore,
-        @RequestParam(defaultValue = "createdAt") String sortBy,
-        @RequestParam(defaultValue = "desc") String sortDir,
-        @RequestParam(required = false)
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-        Instant fromCreatedAt,
-        @RequestParam(required = false)
-        @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
-        Instant toCreatedAt
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size,
+            @RequestParam(required = false) String accountId,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String riskLevel,
+            @RequestParam(required = false) Integer minRiskScore,
+            @RequestParam(required = false) Integer maxRiskScore,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            Instant fromCreatedAt,
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            Instant toCreatedAt
     ) {
         int normalizedPage = Math.max(0, page);
         int normalizedSize = Math.max(1, Math.min(size, 500));
@@ -79,8 +79,8 @@ public class FraudAlertController {
 
         Sort.Direction direction = "asc".equalsIgnoreCase(sortDir) ? Sort.Direction.ASC : Sort.Direction.DESC;
         var pageable = PageRequest.of(normalizedPage,
-                                      normalizedSize,
-                                      Sort.by(direction, resolveSortProperty(sortBy)));
+                normalizedSize,
+                Sort.by(direction, resolveSortProperty(sortBy)));
 
         return alertRepository.findAll(spec, pageable).map(FraudAlertDto::from);
     }
@@ -95,5 +95,31 @@ public class FraudAlertController {
             case "createdat", "created_at" -> "createdAt";
             default -> "createdAt";
         };
+    }
+
+    @PatchMapping("/{id}/status")
+    public FraudAlertDto updateStatus(
+            @PathVariable String id,
+            @RequestBody UpdateFraudAlertStatusRequest request
+    ) {
+        Set<String> allowedStatuses = Set.of("OPEN", "UNDER_REVIEW", "DISMISSED", "CONFIRMED_FRAUD");
+
+        if (request == null || request.status() == null || request.status().isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "status is required");
+        }
+
+        String normalizedStatus = request.status().trim().toUpperCase(Locale.ROOT);
+        if (!allowedStatuses.contains(normalizedStatus)) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "status must be one of: OPEN, UNDER_REVIEW, DISMISSED, CONFIRMED_FRAUD"
+            );
+        }
+
+        FraudAlertRecord alert = alertRepository.findByAlertId(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "fraud alert not found"));
+
+        alert.setStatus(normalizedStatus);
+        return FraudAlertDto.from(alertRepository.save(alert));
     }
 }
