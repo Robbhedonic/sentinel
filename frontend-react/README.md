@@ -12,6 +12,14 @@ React + TypeScript dashboard for Sentinel.
 - Sorting controls for risk score, amount, and timestamps
 - Manual refresh and auto-refresh every 15 seconds
 - Clickable fraud alert investigation panel with finding rules and reasons
+- Alert actions: start review, dismiss, or confirm fraud
+
+## Fraud alert statuses
+
+- `OPEN`
+- `UNDER_REVIEW`
+- `DISMISSED`
+- `CONFIRMED_FRAUD`
 
 ## Run locally
 

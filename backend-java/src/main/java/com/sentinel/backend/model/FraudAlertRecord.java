@@ -6,7 +6,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Index;
-import jakarta.persistence.Lob;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 
@@ -41,8 +40,7 @@ public class FraudAlertRecord {
     @Column(nullable = false, length = 16)
     private String status;
 
-    @Lob
-    @Column(name = "findings_json", nullable = false)
+    @Column(name = "findings_json", nullable = false, columnDefinition = "text")
     private String findingsJson;
 
     @Column(name = "event_version", nullable = false)
