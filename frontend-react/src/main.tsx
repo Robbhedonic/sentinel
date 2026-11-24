@@ -128,6 +128,16 @@ function App() {
   const [loginUsername, setLoginUsername] = React.useState("analyst");
   const [loginPassword, setLoginPassword] = React.useState("sentinel");
   const [authError, setAuthError] = React.useState<string | null>(null);
+  const [auditHistory, setAuditHistory] = React.useState<AlertAudit[]>([]);
+  const [alertAudit, setAlertAudit] = React.useState<AlertAudit[]>([]);
+
+  type AlertAudit = {
+    alertId: string;
+    previousStatus: string;
+    newStatus: string;
+    username: string;
+    changedAt: string;
+  };
 
   const login = async () => {
     setAuthError(null);
@@ -274,11 +284,21 @@ function App() {
       setAlerts((current) =>
         current.map((alert) => (alert.alertId === updated.alertId ? updated : alert))
       );
+      await loadAlertAudit(updated.alertId);
     } catch (e) {
       const message = e instanceof Error ? e.message : "Unknown error";
       setError(message);
     } finally {
       setUpdatingAlert(false);
+    }
+  };
+
+  const loadAlertAudit = async (alertId: string) => {
+    try {
+      const history = await getJson<AlertAudit[]>(`/fraud-alerts/${encodeURIComponent(alertId)}/audit`);
+      setAlertAudit(history);
+    } catch {
+      setAlertAudit([]);
     }
   };
 
@@ -465,7 +485,7 @@ function App() {
           }}
         >
           <article style={cardStyle}>
-            <strong>Transactions</strong>
+            <strong>Global Transactions</strong>
             <div style={{ fontSize: "1.5rem", marginTop: ".5rem" }}>
               {overview.transactionsTotal}
             </div>
@@ -477,7 +497,7 @@ function App() {
             </div>
           </article>
           <article style={cardStyle}>
-            <strong>Open Alerts</strong>
+            <strong>Global Open Alerts</strong>
             <div style={{ fontSize: "1.5rem", marginTop: ".5rem" }}>
               {overview.openAlerts}
             </div>
@@ -668,7 +688,10 @@ function App() {
               {alerts.map((alert) => (
                 <tr
                   key={alert.alertId}
-                  onClick={() => setSelectedAlert(alert)}
+                  onClick={() => {
+                    setSelectedAlert(alert);
+                    void loadAlertAudit(alert.alertId);
+                  }}
                   style={{
                     cursor: "pointer",
                     background: selectedAlert?.alertId === alert.alertId ? "#eff6ff" : undefined
@@ -751,6 +774,53 @@ function App() {
               <p>No structured findings available.</p>
             )}
           </div>
+
+          <div style={{ marginTop: "1.5rem" }}>
+            <h4 style={{ marginTop: 0 }}>Audit Trail</h4>
+            <div style={{ maxHeight: "300px", overflowY: "auto", marginTop: "0.5rem" }}>
+              {auditHistory.length === 0 && <p>No audit history available for this alert.</p>}
+              {auditHistory.map((audit) => (
+                <div
+                  key={audit.changedAt}
+                  style={{
+                    padding: "0.75rem",
+                    borderRadius: 8,
+                    border: "1px solid #e2e8f0",
+                    background: "#f9fafb",
+                    marginBottom: "0.5rem"
+                  }}
+                >
+                  <div style={{ fontSize: "0.875rem", color: "#6b7280" }}>
+                    {new Date(audit.changedAt).toLocaleString()} by {audit.username}
+                  </div>
+                  <div>
+                    <strong>Changed from:</strong> {audit.previousStatus}
+                  </div>
+                  <div>
+                    <strong>Changed to:</strong> {audit.newStatus}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <section style={{ marginTop: "1rem", paddingTop: "1rem", borderTop: "1px solid #e2e8f0" }}>
+            <h3 style={{ marginTop: 0 }}>Audit History</h3>
+            {alertAudit.map((entry, index) => (
+              <div
+                key={`${entry.alertId}-${entry.changedAt}-${index}`}
+                style={{ padding: "0.5rem 0", borderBottom: "1px solid #f1f5f9" }}
+              >
+                <strong>{entry.username}</strong>
+                {" changed "}
+                {entry.previousStatus} → {entry.newStatus}
+                <div style={{ color: "#64748b", marginTop: "0.25rem" }}>
+                  {new Date(entry.changedAt).toLocaleString()}
+                </div>
+              </div>
+            ))}
+            {alertAudit.length === 0 && <p>No audit history available.</p>}
+          </section>
         </section>
       )}
     </main>

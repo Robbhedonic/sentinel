@@ -13,7 +13,13 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.sentinel.backend.model.AlertAuditRecord;
+import com.sentinel.backend.repository.AlertAuditRecordRepository;
+import com.sentinel.backend.web.dto.AlertAuditDto;
+import org.springframework.security.core.Authentication;
+
 import java.time.Instant;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 
@@ -22,9 +28,14 @@ import java.util.Set;
 public class FraudAlertController {
 
     private final FraudAlertRecordRepository alertRepository;
+    private final AlertAuditRecordRepository auditRepository;
 
-    public FraudAlertController(FraudAlertRecordRepository alertRepository) {
+    public FraudAlertController(
+        FraudAlertRecordRepository alertRepository,
+        AlertAuditRecordRepository auditRepository
+    ) {
         this.alertRepository = alertRepository;
+        this.auditRepository = auditRepository;
     }
 
     @GetMapping
@@ -101,7 +112,8 @@ public class FraudAlertController {
     @PatchMapping("/{id}/status")
     public FraudAlertDto updateStatus(
             @PathVariable String id,
-            @RequestBody UpdateFraudAlertStatusRequest request
+            @RequestBody UpdateFraudAlertStatusRequest request,
+            Authentication authentication
     ) {
         Set<String> allowedStatuses = Set.of("OPEN", "UNDER_REVIEW", "DISMISSED", "CONFIRMED_FRAUD");
 
@@ -120,7 +132,25 @@ public class FraudAlertController {
         FraudAlertRecord alert = alertRepository.findByAlertId(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "fraud alert not found"));
 
+        String previousStatus = alert.getStatus();
         alert.setStatus(normalizedStatus);
-        return FraudAlertDto.from(alertRepository.save(alert));
+        FraudAlertRecord saved = alertRepository.save(alert);
+
+        AlertAuditRecord audit = new AlertAuditRecord();
+        audit.setAlertId(saved.getAlertId());
+        audit.setPreviousStatus(previousStatus);
+        audit.setNewStatus(normalizedStatus);
+        audit.setUsername(authentication != null ? authentication.getName() : "system");
+        auditRepository.save(audit);
+
+        return FraudAlertDto.from(saved);
+    }
+
+    @GetMapping("/{id}/audit")
+    public List<AlertAuditDto> auditHistory(@PathVariable String id) {
+        return auditRepository.findByAlertIdOrderByChangedAtDesc(id)
+            .stream()
+            .map(AlertAuditDto::from)
+            .toList();
     }
 }
