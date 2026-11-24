@@ -76,9 +76,15 @@ async function getJson<T>(path: string): Promise<T> {
 }
 
 async function patchJson<T>(path: string, body: unknown): Promise<T> {
+  const token = sessionStorage.getItem("sentinel_auth_token");
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const response = await fetch(`${API_BASE_URL}${path}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify(body)
   });
   if (!response.ok) {
@@ -86,6 +92,11 @@ async function patchJson<T>(path: string, body: unknown): Promise<T> {
   }
   return response.json() as Promise<T>;
 }
+
+type LoginResponse = {
+  token: string;
+  tokenType: string;
+};
 
 function App() {
   const pageSize = 8;
@@ -113,6 +124,34 @@ function App() {
     status: ""
   });
   const [filters, setFilters] = React.useState(draftFilters);
+  const [authToken, setAuthToken] = React.useState<string | null>(null);
+  const [loginUsername, setLoginUsername] = React.useState("analyst");
+  const [loginPassword, setLoginPassword] = React.useState("sentinel");
+  const [authError, setAuthError] = React.useState<string | null>(null);
+
+  const login = async () => {
+    setAuthError(null);
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: loginUsername,
+          password: loginPassword
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error("Invalid demo credentials");
+      }
+
+      const loginData = (await response.json()) as LoginResponse;
+      setAuthToken(loginData.token);
+      sessionStorage.setItem("sentinel_auth_token", loginData.token);
+    } catch (e) {
+      setAuthError(e instanceof Error ? e.message : "Login failed");
+    }
+  };
 
   const loadDashboard = React.useCallback(
     async (silent = false) => {
@@ -198,6 +237,13 @@ function App() {
   }, [loadDashboard]);
 
   React.useEffect(() => {
+    const storedToken = sessionStorage.getItem("sentinel_auth_token");
+    if (storedToken) {
+      setAuthToken(storedToken);
+    }
+  }, []);
+
+  React.useEffect(() => {
     if (!autoRefresh) {
       return;
     }
@@ -258,6 +304,49 @@ function App() {
       <p style={{ marginTop: 0 }}>
         Live data from backend API: <code>{API_BASE_URL}</code>
       </p>
+
+      <section style={{ ...cardStyle, marginBottom: "1.5rem", display: "flex", gap: "0.75rem", alignItems: "center", flexWrap: "wrap" }}>
+        {authToken ? (
+          <>
+            <strong>Authenticated as analyst</strong>
+            <button
+              type="button"
+              onClick={() => {
+                sessionStorage.removeItem("sentinel_auth_token");
+                setAuthToken(null);
+              }}
+              style={{ padding: "0.5rem 0.9rem", borderRadius: 8, border: "1px solid #cbd5e1", background: "#fff" }}
+            >
+              Logout
+            </button>
+          </>
+        ) : (
+          <>
+            <input
+              type="text"
+              placeholder="Username"
+              value={loginUsername}
+              onChange={(event) => setLoginUsername(event.target.value)}
+              style={{ padding: "0.5rem", borderRadius: 8, border: "1px solid #cbd5e1" }}
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              value={loginPassword}
+              onChange={(event) => setLoginPassword(event.target.value)}
+              style={{ padding: "0.5rem", borderRadius: 8, border: "1px solid #cbd5e1" }}
+            />
+            <button
+              type="button"
+              onClick={() => void login()}
+              style={{ padding: "0.5rem 0.9rem", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff" }}
+            >
+              Login
+            </button>
+          </>
+        )}
+        {authError && <span style={{ color: "#b91c1c" }}>{authError}</span>}
+      </section>
 
       <section style={{ ...cardStyle, marginBottom: "1.5rem" }}>
         <h2 style={{ marginTop: 0 }}>Filters</h2>
@@ -615,7 +704,7 @@ function App() {
             <div style={{ display: "flex", gap: "0.5rem", alignSelf: "start", flexWrap: "wrap" }}>
               <button
                 type="button"
-                disabled={updatingAlert}
+                disabled={updatingAlert || !authToken}
                 onClick={() => void updateSelectedAlertStatus("UNDER_REVIEW")}
                 style={{ padding: "0.35rem 0.7rem", borderRadius: 8, border: "1px solid #2563eb", background: "#2563eb", color: "#fff" }}
               >
@@ -623,7 +712,7 @@ function App() {
               </button>
               <button
                 type="button"
-                disabled={updatingAlert}
+                disabled={updatingAlert || !authToken}
                 onClick={() => void updateSelectedAlertStatus("DISMISSED")}
                 style={{ padding: "0.35rem 0.7rem", borderRadius: 8, border: "1px solid #cbd5e1", background: "#fff" }}
               >
@@ -631,7 +720,7 @@ function App() {
               </button>
               <button
                 type="button"
-                disabled={updatingAlert}
+                disabled={updatingAlert || !authToken}
                 onClick={() => void updateSelectedAlertStatus("CONFIRMED_FRAUD")}
                 style={{ padding: "0.35rem 0.7rem", borderRadius: 8, border: "1px solid #b91c1c", background: "#b91c1c", color: "#fff" }}
               >
