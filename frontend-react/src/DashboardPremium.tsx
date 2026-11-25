@@ -1,5 +1,6 @@
 import React from "react";
 import "./styles.css";
+import InvestigationPanel from "./InvestigationPanel";
 
 const API = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:18080/api/v1";
 
@@ -94,6 +95,7 @@ export default function DashboardPremium() {
             {selected?<div className="inspector-content"><div className="inspector-hero"><div className="inspector-title"><strong>{selected.alertId}</strong><span className={cls(selected.riskLevel)}>{selected.riskLevel}</span></div><div className="inspector-meta"><div><label>Account</label><span>{selected.accountId}</span></div><div><label>Transaction</label><span>{selected.transactionId}</span></div><div><label>Risk score</label><span>{selected.riskScore}</span></div><div><label>Status</label><span>{selected.status}</span></div></div></div>
               <div className="findings"><h4>Detection findings</h4>{parseFindings(selected.findingsJson).map((f,i)=><div className="finding" key={i}><strong>{f.rule}</strong><p>{f.reason}</p></div>)}{parseFindings(selected.findingsJson).length===0&&<p>No structured findings.</p>}</div>
               <div className="inspector-actions"><button className="primary-button" disabled={!token||updating} onClick={()=>void updateStatus("UNDER_REVIEW")}>Start review</button><button className="secondary-button" disabled={!token||updating} onClick={()=>void updateStatus("DISMISSED")}>Dismiss</button><button className="danger-button" disabled={!token||updating} onClick={()=>void updateStatus("CONFIRMED_FRAUD")}>Confirm fraud</button></div>
+              <InvestigationPanel alertId={selected.alertId} canEdit={Boolean(token)} />
               <div className="audit"><h4>Audit trail</h4>{audit.map((a,i)=><div className="audit-entry" key={i}><strong>{a.username}</strong>: {a.previousStatus} → {a.newStatus}<span>{new Date(a.changedAt).toLocaleString()}</span></div>)}{audit.length===0&&<p>No status changes recorded.</p>}</div>
             </div>:<div className="empty-inspector"><div><div style={{fontSize:24,marginBottom:8}}>◉</div><strong>Select an alert</strong><p style={{fontSize:12,lineHeight:1.5}}>Choose a fraud alert to inspect findings and update investigation status.</p></div></div>}
           </aside>

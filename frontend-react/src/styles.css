@@ -39,3 +39,14 @@ button { cursor: pointer; }
 @media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } .workspace-grid { grid-template-columns: 1fr; } }
 @media (max-width: 760px) { .app-shell { grid-template-columns: 1fr; } .sidebar { display: none; } .topbar { padding: 0 16px; } .content { padding: 18px 16px; } .kpi-grid { grid-template-columns: 1fr 1fr; } .filter-bar { display: grid; grid-template-columns: 1fr 1fr; } .field input, .field select { width: 100%; } .filter-actions { margin-left: 0; } .login-group { display: none; } }
 .inspector-hidden { display: none; }
+.investigation-panel { margin-top: 14px; padding-top: 14px; border-top: 1px solid #edf0f4; }
+.investigation-panel h4 { margin: 0 0 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: #64748b; }
+.investigation-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.investigation-panel label { display: flex; flex-direction: column; gap: 5px; color: #64748b; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+.investigation-panel input, .investigation-panel select, .investigation-panel textarea { width: 100%; border: 1px solid #dde2ea; border-radius: 8px; background: #fff; color: #334155; font-size: 12px; }
+.investigation-panel input, .investigation-panel select { height: 36px; padding: 0 9px; }
+.investigation-panel textarea { min-height: 72px; resize: vertical; padding: 9px; text-transform: none; letter-spacing: 0; }
+.investigation-panel > .primary-button { margin-top: 8px; }
+.investigation-error { margin-bottom: 8px; color: #be123c; font-size: 11px; }
+.comments-section { margin-top: 16px; }
+.comment-entry { border: 1px solid #edf0f4; border-radius: 8px; padding: 9px; margin-bottom: 7px; }.comment-entry strong { font-size: 11px; }.comment-entry p { margin: 5px 0; font-size: 11px; color: #475569; }.comment-entry span { font-size: 10px; color: #94a3b8; }.muted-text { font-size: 11px; color: #94a3b8; }.comments-section textarea { margin: 8px 0 6px; }
