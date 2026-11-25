@@ -39,3 +39,18 @@ Example:
 ```bash
 VITE_API_BASE_URL=http://localhost:18080/api/v1 npm run dev
 ```
+
+## Browser tests
+
+Run the Playwright smoke suite:
+
+```bash
+npx playwright install chromium
+npm run test:e2e
+```
+
+Open Playwright UI:
+
+```bash
+npm run test:e2e:ui
+```
