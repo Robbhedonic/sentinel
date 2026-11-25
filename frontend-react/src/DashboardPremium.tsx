@@ -16,6 +16,7 @@ async function patch<T>(path:string,body:unknown) { const token=sessionStorage.g
 
 const parseFindings=(s:string):Finding[]=>{try{const v=JSON.parse(s);return Array.isArray(v)?v:[]}catch{return[]}};
 const cls=(value:string)=>`status-badge ${value === "LOW" ? "risk-low" : value === "MEDIUM" ? "risk-medium" : value === "HIGH" ? "risk-high" : value === "OPEN" ? "status-open" : value === "UNDER_REVIEW" ? "status-review" : value === "CONFIRMED_FRAUD" ? "status-fraud" : "status-dismissed"}`;
+const formatStatus = (value: string) => value.replace(/_/g, " ");
 
 export default function DashboardPremium() {
   const [loading,setLoading]=React.useState(true); const [error,setError]=React.useState("");
@@ -26,6 +27,7 @@ export default function DashboardPremium() {
   const [selected,setSelected]=React.useState<Alert|null>(null); const [audit,setAudit]=React.useState<Audit[]>([]); const [updating,setUpdating]=React.useState(false);
   const [token,setToken]=React.useState<string|null>(null); const [username,setUsername]=React.useState("analyst"); const [password,setPassword]=React.useState("sentinel"); const [authError,setAuthError]=React.useState("");
   const [activeSection,setActiveSection]=React.useState("Overview");
+  const [refreshing,setRefreshing]=React.useState(false);
 
   React.useEffect(()=>{setToken(sessionStorage.getItem("sentinel_auth_token"))},[]);
 
@@ -44,6 +46,7 @@ export default function DashboardPremium() {
   const logout=()=>{sessionStorage.removeItem("sentinel_auth_token");setToken(null)};
   const openAlert=async(a:Alert)=>{setSelected(a);try{setAudit(await get<Audit[]>(`/fraud-alerts/${encodeURIComponent(a.alertId)}/audit`))}catch{setAudit([])}};
   const updateStatus=async(s:string)=>{if(!selected)return;setUpdating(true);try{const u=await patch<Alert>(`/fraud-alerts/${encodeURIComponent(selected.alertId)}/status`,{status:s});setSelected(u);setAlerts(v=>v.map(a=>a.alertId===u.alertId?u:a));setAudit(await get<Audit[]>(`/fraud-alerts/${encodeURIComponent(u.alertId)}/audit`))}catch(e){setError(e instanceof Error?e.message:"Update failed")}finally{setUpdating(false)}};
+  const refreshNow=async()=>{setRefreshing(true);await load(false);if(selected){try{setAudit(await get<Audit[]>(`/fraud-alerts/${encodeURIComponent(selected.alertId)}/audit`))}catch{setAudit([])}}setRefreshing(false)};
 
   return <div className="app-shell">
     <aside className="sidebar">
@@ -62,7 +65,7 @@ export default function DashboardPremium() {
       {loading&&<div className="loading-line"/>}
       <div className="content">
         {error&&<div style={{marginBottom:12,padding:"10px 12px",borderRadius:8,background:"#fff1f2",color:"#be123c",fontSize:12}}>{error}</div>}{authError&&<div style={{marginBottom:12,color:"#be123c",fontSize:12}}>{authError}</div>}
-        <div className="section-heading"><div><h2>Risk monitoring</h2><p>Live portfolio and alert activity</p></div><button className="secondary-button" onClick={()=>void load(true)}>↻ Refresh</button></div>
+        <div className="section-heading"><div><h2>Risk monitoring</h2><p>Live portfolio and alert activity</p></div><button className="secondary-button" disabled={refreshing} onClick={()=>void refreshNow()}>{refreshing?"Refreshing…":"↻ Refresh"}</button></div>
 
         <section className="kpi-grid">
           <article className="kpi-card"><div className="kpi-top"><span className="kpi-label">Transactions</span><span className="kpi-icon">↗</span></div><div className="kpi-value">{analytics?.transactionsTotal.toLocaleString()??"—"}</div><div className="kpi-meta">All processed events</div></article>
@@ -74,7 +77,7 @@ export default function DashboardPremium() {
         <section className="filter-bar">
           <div className="field"><label>Account</label><input value={draft.account} onChange={e=>setDraft(v=>({...v,account:e.target.value}))} placeholder="Account ID"/></div>
           <div className="field"><label>Risk level</label><select value={draft.risk} onChange={e=>setDraft(v=>({...v,risk:e.target.value}))}><option value="">All levels</option><option>LOW</option><option>MEDIUM</option><option>HIGH</option></select></div>
-          <div className="field"><label>Alert status</label><select value={draft.status} onChange={e=>setDraft(v=>({...v,status:e.target.value}))}><option value="">All statuses</option><option>OPEN</option><option>UNDER_REVIEW</option><option>DISMISSED</option><option>CONFIRMED_FRAUD</option></select></div>
+          <div className="field"><label>Alert status</label><select value={draft.status} onChange={e=>setDraft(v=>({...v,status:e.target.value}))}><option value="">All statuses</option><option value="OPEN">Open</option><option value="UNDER_REVIEW">Under Review</option><option value="DISMISSED">Dismissed</option><option value="CONFIRMED_FRAUD">Confirmed Fraud</option></select></div>
           <div className="filter-actions"><button className="secondary-button" onClick={reset}>Reset</button><button className="primary-button" onClick={apply}>Apply filters</button></div>
         </section>
 
@@ -86,13 +89,13 @@ export default function DashboardPremium() {
             </article>
 
             <article className="panel"><div className="panel-header"><div className="panel-title"><h3>Fraud alerts</h3><p>{alertTotal.toLocaleString()} matching alerts</p></div><div className="panel-tools"><select value={alertSort} onChange={e=>{setAlertSort(e.target.value);setAlertPage(0)}}><option value="createdAt">Created</option><option value="riskScore">Risk score</option></select><select value={alertDir} onChange={e=>{setAlertDir(e.target.value);setAlertPage(0)}}><option value="desc">Newest</option><option value="asc">Oldest</option></select></div></div>
-              <div className="table-wrap"><table className="data-table"><thead><tr><th>Alert</th><th>Account</th><th>Status</th><th>Risk</th><th>Created</th></tr></thead><tbody>{alerts.map(a=><tr key={a.alertId} className={`alert-row ${selected?.alertId===a.alertId?"selected":""}`} onClick={()=>void openAlert(a)}><td className="alert-id">{a.alertId}</td><td className="account">{a.accountId}</td><td><span className={cls(a.status)}>{a.status.replace("_"," ")}</span></td><td><span className={cls(a.riskLevel)}>{a.riskLevel}</span></td><td>{new Date(a.createdAt).toLocaleString()}</td></tr>)}</tbody></table></div>
+              <div className="table-wrap"><table className="data-table"><thead><tr><th>Alert</th><th>Account</th><th>Status</th><th>Risk</th><th>Created</th></tr></thead><tbody>{alerts.map(a=><tr key={a.alertId} className={`alert-row ${selected?.alertId===a.alertId?"selected":""}`} onClick={()=>void openAlert(a)}><td className="alert-id">{a.alertId}</td><td className="account">{a.accountId}</td><td><span className={cls(a.status)}>{formatStatus(a.status)}</span></td><td><span className={cls(a.riskLevel)}>{a.riskLevel}</span></td><td>{new Date(a.createdAt).toLocaleString()}</td></tr>)}</tbody></table></div>
               <div className="pagination"><span>Page {alertPage+1} of {alertPages}</span><div className="page-controls"><button disabled={alertPage===0} onClick={()=>setAlertPage(p=>Math.max(0,p-1))}>‹</button><button disabled={alertPage+1>=alertPages} onClick={()=>setAlertPage(p=>Math.min(alertPages-1,p+1))}>›</button></div></div>
             </article>
           </div>
 
           <aside className="panel inspector"><div className="panel-header"><div className="panel-title"><h3>Investigation</h3><p>{selected?selected.alertId:"No alert selected"}</p></div>{selected&&<button className="secondary-button" onClick={()=>setSelected(null)}>Close</button>}</div>
-            {selected?<div className="inspector-content"><div className="inspector-hero"><div className="inspector-title"><strong>{selected.alertId}</strong><span className={cls(selected.riskLevel)}>{selected.riskLevel}</span></div><div className="inspector-meta"><div><label>Account</label><span>{selected.accountId}</span></div><div><label>Transaction</label><span>{selected.transactionId}</span></div><div><label>Risk score</label><span>{selected.riskScore}</span></div><div><label>Status</label><span>{selected.status}</span></div></div></div>
+            {selected?<div className="inspector-content"><div className="inspector-hero"><div className="inspector-title"><strong>{selected.alertId}</strong><span className={cls(selected.riskLevel)}>{selected.riskLevel}</span></div><div className="inspector-meta"><div><label>Account</label><span>{selected.accountId}</span></div><div><label>Transaction</label><span>{selected.transactionId}</span></div><div><label>Risk score</label><span>{selected.riskScore}</span></div><div><label>Status</label><span>{formatStatus(selected.status)}</span></div></div></div>
               <div className="findings"><h4>Detection findings</h4>{parseFindings(selected.findingsJson).map((f,i)=><div className="finding" key={i}><strong>{f.rule}</strong><p>{f.reason}</p></div>)}{parseFindings(selected.findingsJson).length===0&&<p>No structured findings.</p>}</div>
               <div className="inspector-actions"><button className="primary-button" disabled={!token||updating} onClick={()=>void updateStatus("UNDER_REVIEW")}>Start review</button><button className="secondary-button" disabled={!token||updating} onClick={()=>void updateStatus("DISMISSED")}>Dismiss</button><button className="danger-button" disabled={!token||updating} onClick={()=>void updateStatus("CONFIRMED_FRAUD")}>Confirm fraud</button></div>
               <InvestigationPanel alertId={selected.alertId} canEdit={Boolean(token)} />
