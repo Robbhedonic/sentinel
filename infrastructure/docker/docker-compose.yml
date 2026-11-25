@@ -107,6 +107,10 @@ services:
       - SENTINEL_JWT_SECRET=${SENTINEL_JWT_SECRET:-sentinel-local-development-secret-change-before-production}
       - SENTINEL_DEMO_USERNAME=${SENTINEL_DEMO_USERNAME:-analyst}
       - SENTINEL_DEMO_PASSWORD=${SENTINEL_DEMO_PASSWORD:-sentinel}
+      - SENTINEL_ADMIN_USERNAME=${SENTINEL_ADMIN_USERNAME:-admin}
+      - SENTINEL_ADMIN_PASSWORD=${SENTINEL_ADMIN_PASSWORD:-sentinel-admin}
+      - SENTINEL_AUDITOR_USERNAME=${SENTINEL_AUDITOR_USERNAME:-auditor}
+      - SENTINEL_AUDITOR_PASSWORD=${SENTINEL_AUDITOR_PASSWORD:-sentinel-audit}
     ports:
       - "${BACKEND_PORT}:8080"
     healthcheck:
