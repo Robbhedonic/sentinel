@@ -24,6 +24,7 @@ export default function DashboardPremium() {
   const [txSort,setTxSort]=React.useState("processedAt"); const [txDir,setTxDir]=React.useState("desc"); const [alertSort,setAlertSort]=React.useState("createdAt"); const [alertDir,setAlertDir]=React.useState("desc");
   const [selected,setSelected]=React.useState<Alert|null>(null); const [audit,setAudit]=React.useState<Audit[]>([]); const [updating,setUpdating]=React.useState(false);
   const [token,setToken]=React.useState<string|null>(null); const [username,setUsername]=React.useState("analyst"); const [password,setPassword]=React.useState("sentinel"); const [authError,setAuthError]=React.useState("");
+  const [activeSection,setActiveSection]=React.useState("Overview");
 
   React.useEffect(()=>{setToken(sessionStorage.getItem("sentinel_auth_token"))},[]);
 
@@ -46,13 +47,13 @@ export default function DashboardPremium() {
   return <div className="app-shell">
     <aside className="sidebar">
       <div className="brand"><div className="brand-mark">S</div><div><div className="brand-name">Sentinel</div><div className="brand-sub">Risk Intelligence</div></div></div>
-      <div className="nav-label">Workspace</div><button className="nav-item active"><span className="nav-icon">▦</span>Overview</button><button className="nav-item"><span className="nav-icon">⌁</span>Transactions</button><button className="nav-item"><span className="nav-icon">△</span>Fraud Alerts</button><button className="nav-item"><span className="nav-icon">◎</span>Investigations</button>
+      <div className="nav-label">Workspace</div><button className={`nav-item ${activeSection==="Overview"?"active":""}`} onClick={()=>setActiveSection("Overview")}><span className="nav-icon">▦</span>Overview</button><button className={`nav-item ${activeSection==="Transactions"?"active":""}`} onClick={()=>setActiveSection("Transactions")}><span className="nav-icon">⌁</span>Transactions</button><button className={`nav-item ${activeSection==="Fraud Alerts"?"active":""}`} onClick={()=>setActiveSection("Fraud Alerts")}><span className="nav-icon">△</span>Fraud Alerts</button><button className={`nav-item ${activeSection==="Investigations"?"active":""}`} onClick={()=>setActiveSection("Investigations")}><span className="nav-icon">◎</span>Investigations</button>
       <div className="nav-label">System</div><button className="nav-item"><span className="nav-icon">▥</span>Analytics</button><button className="nav-item"><span className="nav-icon">◫</span>Audit Log</button>
       <div className="sidebar-user"><div className="user-row"><div className="avatar">A</div><div><div className="user-name">Analyst</div><div className="user-role">Operations</div></div></div></div>
     </aside>
 
     <main className="main">
-      <header className="topbar"><div className="topbar-title"><h1>Overview</h1><p>Real-time fraud monitoring</p></div><div className="header-actions">
+      <header className="topbar"><div className="topbar-title"><h1>{activeSection}</h1><p>Real-time fraud monitoring</p></div><div className="header-actions">
         <div className="status-pill"><span className="status-dot"/>All systems operational</div>
         {token ? <button className="secondary-button" onClick={logout}>Logout</button> : <div className="login-group"><input type="text" value={username} onChange={e=>setUsername(e.target.value)} placeholder="Username"/><input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Password"/><button onClick={()=>void login()}>Login</button></div>}
       </div></header>

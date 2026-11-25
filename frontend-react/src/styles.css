@@ -38,3 +38,4 @@ button { cursor: pointer; }
 .loading-line { height: 3px; background: #4f46e5; width: 100%; }
 @media (max-width: 1100px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } .workspace-grid { grid-template-columns: 1fr; } }
 @media (max-width: 760px) { .app-shell { grid-template-columns: 1fr; } .sidebar { display: none; } .topbar { padding: 0 16px; } .content { padding: 18px 16px; } .kpi-grid { grid-template-columns: 1fr 1fr; } .filter-bar { display: grid; grid-template-columns: 1fr 1fr; } .field input, .field select { width: 100%; } .filter-actions { margin-left: 0; } .login-group { display: none; } }
+.inspector-hidden { display: none; }
