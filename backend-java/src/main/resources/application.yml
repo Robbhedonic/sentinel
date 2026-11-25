@@ -36,6 +36,9 @@ sentinel:
       alerts: ${SENTINEL_ALERTS_TOPIC:alerts.generated}
 
 management:
+  metrics:
+    tags:
+      application: sentinel-backend
   endpoints:
     web:
       exposure:

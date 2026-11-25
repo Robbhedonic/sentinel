@@ -6,3 +6,8 @@ scrape_configs:
     static_configs:
       - targets:
           - prometheus:9090
+  - job_name: sentinel-backend
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets:
+          - backend:8080
