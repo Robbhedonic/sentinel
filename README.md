@@ -265,6 +265,7 @@ Bootstrap scripts available:
 - `scripts/dev-down.sh`: stops the base platform
 - `scripts/dev-up-app.sh`: starts base platform + backend + frontend
 - `scripts/dev-test-app.sh`: smoke tests backend API and frontend
+- `scripts/full-e2e.sh`: runs app stack, login, API smoke tests, and investigation/comment persistence
 - `scripts/pipeline-e2e.sh`: runs simulator -> fraud engine -> Kafka output validation
 
 Run:
